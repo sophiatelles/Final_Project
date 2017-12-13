@@ -1,0 +1,222 @@
+---
+title: "Project 2"
+author: "Sophia Telles & Samantha Driscoll"
+date: "December 12, 2017"
+output: 
+  html_document:
+    self_contained: no
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(echo = TRUE)
+op=options(gvis.plot.tag='chart')
+```
+
+```{r}
+library(gudatavizfa17)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(ggmap)
+library(plotly)
+library(rcdimple)
+library(googleVis)
+library(htmltools)
+library(htmlwidgets)
+library(DT)
+```
+
+```{r}
+sfg=read.csv("science_federal_giving.csv")
+```
+# Introduction
+
+#####  This analysis was done to look at the patterns of political donations from donors who work in a scientific field, to see what parties they are most commonly supporting. People who are employeed in scientific fields often do not like to think of science as a political issue, and therefore do not like to take sides in political debates. However in recent years, starting with Obama's campaign in 2008, science became an important topic of debate, due to the controversial topic of global warming. Per the article, "When Scientists Donate to Politicians, Its Usually Democrats", this is exactly the case: Scientists donate to Democrats the most on average, and will most often donate to candidates with some kind of scientific background. This is due to the fact that Democrats generally promise more funding for science than Republicans on average. Our findings, however, seemed to contradict this hypothesis. 
+
+# 1. Please study differences in donations across different states among people with science-intensive jobs for Presidential elections across the three election cycles.
+
+##### We are only interested in presidential election donations, so we filtered out all of the other types of donations.We interpreted one election cycle to be the years leading up to an election. These three cycles are 2008, 2012, and 2016.
+
+
+```{r}
+sfg <- sfg %>% filter( transaction_pgi=="P")
+```
+
+
+## Election Cycle 2008
+
+```{r}
+sfg08 <- sfg %>% filter( cycle=="2008")
+```
+
+##### Below, we found the mean of the 2016 donation dollars in order to analyze trends. This is so we can make relevant analyzations that account for inflation. We also removed every code that was not within the United States. 
+
+
+```{r}
+MeanDonations08=sfg08%>%group_by(state)%>%summarize(Donation.Mean=mean(`X2016_dollars`))
+MeanDonations08$state[is.na(MeanDonations08$state)] <- ""
+MeanDonations08 <- MeanDonations08 %>% filter(!state %in% c("ZZ", "AA", "","QC", "PR","AE","AP","AS","GU","VI", "DC"))
+```
+ 
+ 
+```{r results='asis'}
+StateDonations08 <- gvisGeoChart(MeanDonations08, "state", "Donation.Mean",
+                          options=list(region="US", displayMode="regions", resolution="provinces",width=1000, height=400))
+StateDonations08
+```
+
+##### The donations for the 2008 elections were the highest ovetrall in comparison to the other two cycles. That is, more states donated within the higher end of the donaition range spectrum. This could be because Obama was a huge proponant of funding scientific research, and scientists vote primarily for Democrats. The highest donating state was Louisiana, which could be considered a "red" state, interestingly enough. The same goes for the other highest-donating states. The explaintion for this seemingly-contradictive finding could be that there is simply a high-concentration of scientists in this state. Also, just becuase most people in the state identify as republican does not necessarily mean that most people are going to vote for the republican candidate. Also, the donation means in the red states tend to be higher because people who are making donations, are donating larger amounts. While people making donations in blue states are making more donations of smaller amounts. The overall donation mean ranges from about $400 to about $900. 
+
+
+## Election Cycle 2012
+
+
+```{r}
+sfg12 <- sfg %>% filter(cycle=="2012")
+```
+
+```{r}
+MeanDonations12=sfg12%>%group_by(state)%>%summarize(Donation.Mean=mean(`X2016_dollars`))
+MeanDonations12$state[is.na(MeanDonations12$state)] <- ""
+MeanDonations12 <- MeanDonations12 %>% filter(!state %in% c("ZZ", "AA", "","QC", "PR","AE","AP","AS","GU","VI", "DC"))
+```
+ 
+```{r results='asis'}
+StateDonations12 <- gvisGeoChart(MeanDonations12, "state", "Donation.Mean",
+                          options=list(region="US", displayMode="regions", resolution="provinces",width=1000, height=400))
+StateDonations12
+```
+
+##### The map for the 2012 cycle gives us similar information when compared to the 2008 cycle. The mean was higher overall but most states donated within the low to middle end of the spectrum, which ranged from about $400 to about $1000 overall. Louisiana, again, had the highest average amount of donations. The similarity between the two maps could be because the Democratic candidate remained the same. The overall decrease in donations is likely a result of the fact that people who had already donated to Obamas 2008 campaign did not find it necessary to donate again. 
+
+
+## Election Cycle 2016
+
+```{r}
+sfg16 <- sfg %>% filter(cycle=="2016")
+```
+
+```{r}
+MeanDonations16=sfg16%>%group_by(state)%>%summarize(Donation.Mean=mean(`X2016_dollars`))
+MeanDonations16$state[is.na(MeanDonations16$state)] <- ""
+MeanDonations16 <- MeanDonations16 %>% filter(!state %in% c("ZZ", "AA", "","QC", "PR","AE","AP","AS","GU","VI", "DC"))
+```
+ 
+```{r results='asis'}
+StateDonations16 <- gvisGeoChart(MeanDonations16, "state", "Donation.Mean",
+                          options=list(region="US", displayMode="regions", resolution="provinces",width=1000, height=400))
+ StateDonations16
+```
+
+##### The most significant finding from the 2016 cycle map is that the donations have decreased significantly, with the donation means only ranging from $60 to around $400. This is most likely to do with the candidates. Donald Trump did not make promising remarks reguarding funding for scientific research, so this probably discouraged any republican scientists from donating to him. Since engineers make up a large amount of the donations, and are also largely republican, this could be a factor. As far as democratic scientists, they probably either did not favor Hillary or felt that there was no way Donald would win, and thus didn't see a need to donate to her campaign.The highest donating state is still Louisiana, followed closely by Oklahoma. 
+
+
+# 2. Are there differences in donation patterns across the three types of classifications - Engineer/Math-Stat/Scientist - across different years for house, senate, and presidential elections, across different years.
+
+##### We began by creating a new data set that would tell us the information we needed and wanted to analyse while looking for differences in donation patters across the three types of classifications. Out new data set includes: classification, cmte_pty, cand_office, cycle, and Donation.Mean. Classification tells us if the donation came from an Engineer, Math-Stat, or Scientist. It is the classification of the occupation for the donator. The cmte_pty tells us the committee party affiliation that the donation went to. We chose this because this better represent the donation went, not the candidate. Some people donated to a political party, because the party is better affiliated with what the donator supports. The cand_office tells us if the donation was for a House of Representative, Senate, or Presidential seat for an election. The cycle represents the year of that election cycle. Finally, Donation.Mean is the mean of the 2016_dollars. We also wanted to exclude null or incomplete data from our analysis. This meant we had to determine which data would need to be excluded. We decided that by removing any null or NA data from the cycle column, we would still continue to represent the best version of our data. 
+
+
+```{r}
+sfgcount=sfg%>%group_by(classification,cmte_pty,cand_office,cycle)%>%summarise(count=length(classification),Donation.Mean=mean(`X2016_dollars`))
+```
+
+```{r}
+sfgcountnew <- sfgcount %>% filter(!cycle %in% c("", "2006","NA"))
+sfgcountnew$cycle[is.na(sfgcountnew$cycle)] <- ""
+sfgcountnew <- sfgcountnew %>% filter(!cycle %in% c(""))
+```
+
+```{r}
+dt=datatable(sfgcountnew, options=list(pageLength = 10))
+saveWidget(dt,file="dt.html",selfcontained = TRUE)
+dt
+```
+
+
+##### In order to find differences in donation patters accross the three classifications, we began by making a rcdimple bar chart. We compaired cycle/classification by Donation.Mean, so each colored bar represents one of the three classifications and the x axis shows the cycle years in ascending order. The rcdimple bar chart is interactive, so by scrolling over one of the colored bars, one can see the classification, cycle, and Donation.Mean. This first graph demonstrates the Donation.mean for all election cycles for all candidate offices (House, Senate, Presidential).
+
+## Donation patterns accross the three classifications across the different years, including party affiliation
+
+```{r}
+mydimplebarplot=sfgcountnew%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "classification", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(mydimplebarplot,file = "mydimplebarplot.html",selfcontained = TRUE)
+mydimplebarplot
+```
+
+#####  From this first graph, we can see that all three classifications had the hightest donation mean during the 2008 election cycle, and the lowest donation mean during the 2016 election cycle, which both included presidental elections. Something to consider for both of these election cycles, is that they were both elections where there was no incumbent running for presidential office. So based on the candidates running, these science-intensive donators may have felt more or less confidence for their donations to support a candidate. Over all election cycles and office elections, Math-Stat occupations would donate the least and Scientists donated the most. This is probably due to more political candidates promising more funding for science related research, as opposed to Math and Statistics research. Math and Statistics reserach is less publicized, while scienctific research is often a topic of debate during presidential elections. 
+
+##### We wanted to see how many people from each classification were making political donations. So the following graph shows the count of Math-Statisticians, Scientists, and Engineers that were donating during these election cycles. We found that while more people might donate, they might be donating less, which would impact donation means. 
+
+```{r}
+mydimplebarplotcount=sfgcountnew%>%dimple(x=c("cycle","classification"),y = "count", groups = "classification", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(mydimplebarplotcount,file = "mydimplebarplotcount.html",selfcontained = TRUE)
+mydimplebarplotcount
+```
+
+##### The classification that has the highest count of donations consistently every year is engineers. Which spiked significantly during 2016. This is could be due to many factors, such as what was said during the campaign, what was talked about during debates, or a number of other things. The most engineers donated during presidential election cycles, which could suggest their committment to the severity of presidential elections, and how presidential elections will impact their work. We follow this with a graph that spits the count of classifications by the committee party that was donated to. 
+
+```{r}
+mydimplebarplotcount1=sfgcountnew%>%dimple(x=c("cycle","classification"),y = "count", groups = "cmte_pty", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(mydimplebarplotcount1,file = "mydimplebarplotcount1.html",selfcontained = TRUE)
+mydimplebarplotcount1
+```
+
+##### We can see that more Democrats made a larger amount of donations, but likely of smaller monetary amounts. Democratic policies often appeal more to middle and lower income groups, while republican policies appeal to those with higher incomes. This might lead to more people donating smaller amounts to their Democratic party. 
+
+## Donation patterns House
+
+```{r}
+sfgcountH = sfgcountnew %>% filter( cand_office=="H")
+Hdimplebarplot=sfgcountH%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "classification", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(Hdimplebarplot,file = "Hdimplebarplot.html",selfcontained = TRUE)
+Hdimplebarplot
+```
+
+```{r}
+H2dimplebarplot=sfgcountH%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "cmte_pty", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(H2dimplebarplot,file = "H2dimplebarplot.html",selfcontained = TRUE)
+H2dimplebarplot
+```
+
+##### 2008 scientist wanted to donate to the House. 2008 was such a significant election for our nations, that a lot of people wanted to get involved in any way possible. This included supporting house of representative candidates. We follow this with a graph that splits the donation means for each classification into different committee party donation means. This graph is interactive so one can see the commitee party identification, along with the donation mean, and the classification of the donations. Overall, engineers donated the most. It is important to note that in the 2008, 2010, 2014, and 2016 cycles, there is some lack of consistency for how cmte_pty was recorded. REP, rep, Rep, and R are all representing donations to the Republican committee party. 0 is an unknown or unspecified committee party. Democratic is DEM or dem. If these were not issues, we believe that the republican and democratic donation means would remain quite consistent from cycle to cycle for the House. 
+
+## Donation patterns Senate
+
+```{r}
+sfgcountS = sfgcountnew %>% filter( cand_office=="S")
+Sdimplebarplot=sfgcountS%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "classification", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(Sdimplebarplot,file = "Sdimplebarplot.html",selfcontained = TRUE)
+Sdimplebarplot
+```
+
+```{r}
+S2dimplebarplot=sfgcountS%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "cmte_pty", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(S2dimplebarplot,file = "S2dimplebarplot.html",selfcontained = TRUE)
+S2dimplebarplot
+```
+
+##### From this first plot, we can see that Math/Statisticians donated the most during the 2008 senate election, and while their donations decreased they still made contributions to these campaigns. It is important to note that the first graph shows the mean donations by classification, and the second graph is showing the mean donation for each committee party for the three classifications. The second graph gives us a good insight to the involvement of the different committee parties and their donations during the different election cycles. With some of the most important Senate races happening in 2010 and 2014, we can see how more donations from more parties were given during these times. 2010 and 2014 are a chance for the nation to initiate change two years after the presidential election. For example, in 2014, the senate went Red during Obama's presidency. These two years might also have had fewer incumbents up for reelection, so more support for new candidates could attribute to this as well. We believe that the senate and house election cycles and donation patterns demonstrate how the nation changes after two years of a presidential election. Both of these graphs also show us how 2012 was a pretty consistent election cycle, which could be attributed to a lot of incumbents being up for reelection.
+
+## Donation patterns Presidency
+```{r}
+sfgcountP = sfgcountnew %>% filter( cand_office=="P")
+Pdimplebarplot=sfgcountP%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "classification", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(Pdimplebarplot,file = "Pdimplebarplot.html",selfcontained = TRUE)
+Pdimplebarplot
+```
+
+```{r}
+P2dimplebarplot=sfgcountP%>%dimple(x=c("cycle","classification"),y = "Donation.Mean", groups = "cmte_pty", type= "bar", width=600,height=390)%>% add_legend()
+saveWidget(P2dimplebarplot,file = "P2dimplebarplot.html",selfcontained = TRUE)
+P2dimplebarplot
+```
+
+##### Now we look at donation patterns during presidential election cycles. When we look at the first graph, the scientist category had the largest donation mean during 2008, 2010, 2014, and 2016. The only year where the donation mean pattern is smaller than the other classification donation means is during 2012, which was a presidential cycle with an incumbent presidential candidate. It is important to note that while in 2012, scientists had a lower donation mean than engineers, in 2010, the scientist donation mean was almost double the donation mean in 2012. By looking at the second graph with the donations separated by committee party affiliation, we can see that 2010 donations were completely democratic. Meanwhile, 2012 had more variety in committee party donations. Once again, all science affiliated classifications had smaller donation means during the 2016 presidential election cycle. In 2014, there is one party donation that seems out of place. It is the Engineer, Republican donation that is in the negative. This one group of donations is unique because it is the only mean donation amount that has been negative. This could be a donation that was reorded incorrectly, that came from insufficient funds, or some other factor. It is important to note this strange donation in 2014. Overall, there is a downward trend of scientific classification donations during all of the presidential election cycles. This could be due to a lack of trust in recent political candidates that they will support scientific agendas. 
+
+
+## Conclusion and Limitations
+
+##### From our analysis, we are able to conclude that yes, more scientists make donations to Democratic parties. In these cases, there tend to be more donations of a smaller amount, where as when looking at the Republican donations we see fewer donations of larger amounts. This could be a large reason why the states with the highest mean donations in our maps answering question one were also red states. The highest donations occurred during Obama's election campaigns, in 2008 and 2012, which shows the scientists support for the Democratic party at this time, specifically Obama's views on climate change and his many promises to fund scientific research. In 2016, the donation amounts plummet significantly, which could be that scientists did not like either candidate's promises in regards to science. Donald Trump gave no recognition towards climate change, calling it a "hoax". Though Hillary Clinton made some promises for scientific research, her disapproval of the space program might have hurt her donations from scientists, as well as the fact that she is female. During 2016 and across all office elections, engineers donated more than they ever had before, primarily to the Democratic party. When comparing classification to donation trends for the specific offices of Congress, we saw that 2008 had the most donations for each office across the board. Scientists had the most donations to the President and House over all election cycles, but Mathematicians had the most 2008 donations and significantly more donations for all Senate election cycles.These patterns can provide some insight to the policies and candidates that each of these classifications were supporting with their donations. It was likely that more donations were made by certain classifications if there was a candidate supporting that classification's research. We think the largest significance that all graphs have shown is the overall drop in political donations for the presidential election, and all office elections, from science intensive jobs from all classifications and all parties during the 2016 election cycle. Overall, scientists 
+
+##### Throughout our semester, we have come across several limitation within R. However, with more assignments and skills under out belts, we did not come across as many limitations for this Project. By now we had figured out which types of graphs can tell the story we want to tell, and how to overcome limitations of the past. We think that our largest limitation for this project was a lack of knowledge about the multiple office elections and their cycle years. We did not really understand why there was a larger donation mean in traditional red states, when we still believed most donations to go to democrats. Another limitation was the data itself, there were some inconsistencies with how the data was recorded, for example there were a varietyof names for the same committee parties. It took us some time to  understand that more people donating did not mean that there was more money being donated. There were also some negative donation amounts that we could not necessarily understand. We attributed negative donations to the 2016 inflation amounts. A negative donation amount could be due to account problems from the donating party. Overall, this semester has allowed us to overcome our limitations to tell a story with our data. 
